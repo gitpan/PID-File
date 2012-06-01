@@ -16,11 +16,11 @@ PID::File - PID files with guarding against exceptions.
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -76,6 +76,8 @@ The code for this module was largely borrowed from there.
 
 =head3 new
 
+ my $pid_file = PID::File->new;
+
 =cut
 
 sub new
@@ -100,7 +102,7 @@ The filename for the pid file.
 
 If you specify a relative path, it will be relative to where your scripts runs.
 
-By default it will use the script name and append '.pid' to it.
+By default it will use the script name and append C<.pid> to it.
 
 =cut
 
@@ -130,7 +132,7 @@ sub file
 
 =head3 create
 
-Create a new pid file.
+Attempt to create a new pid file.
 
  if ( $pid_file->create )
 
@@ -208,7 +210,7 @@ You must assign the return value of C<guard> to some token.
  
      # do something, that could possibly die before being able to call $lock->remove
      
-     # $pid_file->remove;
+     # $pid_file->remove;   # no longer need to call this explicitly
  }
  
  # $guard is now out of scope and $pid_file->remove was called automatically.
