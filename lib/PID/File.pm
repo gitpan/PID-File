@@ -8,17 +8,19 @@ use warnings;
 use File::Basename qw(fileparse);
 use FindBin qw($Bin);
 
+use PID::File::Guard;
+
 =head1 NAME
 
 PID::File - PID files, that just work.
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -93,7 +95,9 @@ sub new
 
 The filename for the pid file.
 
-Can be relative to the directory where your scripts runs, or absolute.
+ $pid_file->file( '/tmp/myapp.pid' );
+
+If you specify a relative path, it will be relative to where your scripts runs.
 
 By default it will use the script name and append '.pid' to it.
 
@@ -127,6 +131,8 @@ sub file
 
 Create a new pid file.
 
+ if ( $pid_file->create )
+
 Returns true or false for whether the pid file was created.
 
 If the file already exists, and the pid in that file is still running, no action will be taken and it will return false.
@@ -147,6 +153,8 @@ sub create
 }
 
 =head3 running
+
+ if ( $pid_file->running )
 
 Returns true or false to indicate whether the pid in the current pid file is running.
 
@@ -172,6 +180,8 @@ sub running
 
 Removes the pid file.
 
+ $pid_file->remove;
+
 =cut
 
 sub remove
@@ -181,6 +191,36 @@ sub remove
 	unlink $self->file;
 
 	return $self;
+}
+
+=head3 guard
+
+Returns a token that will call C<remove> when it goes out of scope.
+
+This deals with scenarios where your script may throw an exception before being able to remove the lock file.
+
+You must assign the return value of C<guard> to some token.
+
+ if ( $pid_file->create )
+ {
+     my $guard = $pid_file->guard;
+ 
+     # do something, that could possibly die before being able to call $lock->remove
+     
+     # $pid_file->remove;
+ }
+ 
+ # $guard is now out of scope and $pid_file->remove was called automatically.
+ 
+=cut
+
+sub guard
+{
+	my $self = shift;
+	
+	die "Can't create guard in void context" if ! defined wantarray;
+	
+	return PID::File::Guard->new( $self, 'remove' );
 }
 
 =head1 AUTHOR
@@ -198,7 +238,6 @@ automatically be notified of progress on your bug as I make changes.
 You can find documentation for this module with the perldoc command.
 
     perldoc PID::File
-
 
 You can also look for information at:
 
@@ -222,10 +261,10 @@ L<http://search.cpan.org/dist/PID-File/>
 
 =back
 
-
 =head1 ACKNOWLEDGEMENTS
 
 L<Daemon::Control>
+L<Scope::Guard>
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -236,7 +275,6 @@ under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
-
 
 =cut
 
