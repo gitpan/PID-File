@@ -14,11 +14,11 @@ PID::File - PID files, that just work.
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -44,15 +44,17 @@ Create PID files.
      else
      {
          # either someone got in there just before you
-         # or there's a serious filesystem problem
+         # or there's a serious file-system problem
      }
  }
 
 =head1 DESCRIPTION
 
-Creating a pid file, or lock file, should be such a simple process, unfortunately other modules on CPAN have bugs and are not being maintained.
+Creating a pid file, or lock file, should be such a simple process.
 
-See L<Daemon::Control> for a more complete solution for creating daemons (and pid files) - the code for this module was largely borrowed from there.
+See L<Daemon::Control> for a more complete solution for creating daemons (and pid files)
+
+The code for this module was largely borrowed from there.
 
 =head1 Methods
 
