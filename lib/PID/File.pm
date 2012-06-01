@@ -12,15 +12,15 @@ use PID::File::Guard;
 
 =head1 NAME
 
-PID::File - PID files, that just work.
+PID::File - PID files with guarding against exceptions.
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -48,7 +48,7 @@ Create PID files.
      # or there's a serious file-system problem
  }
 
-Or a bit more condensed...
+Or a bit more robust...
 
  while ( $pid_file->running || ! $pid_file->create )
  {
@@ -56,7 +56,9 @@ Or a bit more condensed...
      sleep 2;
  }
 
- # now do something
+ my $guard = $pid_file->guard;
+ 
+ # now do something, if we die at this point, the guard will call remove() automatically
  
  $pid_file->remove;
 
