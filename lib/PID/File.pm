@@ -14,11 +14,11 @@ PID::File - PID files, that just work.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -35,13 +35,19 @@ Create PID files.
  }
  else
  {
-     $pid_file->create;
+     if ( $pid_file->create )
+     {
+         # do something with confidence here
+ 
+         $pid_file->remove;
+     }
+     else
+     {
+         # either someone got in there just before you
+         # or there's a serious filesystem problem
+     }
  }
- 
- # do some stuff
- 
- $pid_file->remove;
- 
+
 =head1 DESCRIPTION
 
 Creating a pid file, or lock file, should be such a simple process, unfortunately other modules on CPAN have bugs and are not being maintained.
@@ -121,9 +127,10 @@ sub create
 
 	return 0 if $self->running;
 
-	open my $fh, ">", $self->file or return 0;
-	print $fh $$;
-	close $fh;
+	open my $fh, '>', $self->file or return 0;
+	print $fh $$                  or return 0;
+	close $fh                     or return 0;
+	
 	return 1;
 }
 
@@ -147,7 +154,6 @@ sub running
 	close $fh;
 
 	return kill 0, $pid;
-
 }
 
 =head3 remove
@@ -155,7 +161,6 @@ sub running
 Removes the pid file.
 
 =cut
-
 
 sub remove
 {
