@@ -14,11 +14,11 @@ PID::File - PID files, that just work.
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -33,20 +33,30 @@ Create PID files.
  {
      exit;
  }
+ 
+ if ( $pid_file->create )
+ {
+     # do something with confidence here
+ 
+     $pid_file->remove;
+ }
  else
  {
-     if ( $pid_file->create )
-     {
-         # do something with confidence here
- 
-         $pid_file->remove;
-     }
-     else
-     {
-         # either someone got in there just before you
-         # or there's a serious file-system problem
-     }
+     # either someone got in there just before you
+     # or there's a serious file-system problem
  }
+
+Or a bit more condensed...
+
+ while ( $pid_file->running || ! $pid_file->create )
+ {
+     print "Already running, sleeping for 2\n";
+     sleep 2;
+ }
+
+ # now do something
+ 
+ $pid_file->remove;
 
 =head1 DESCRIPTION
 
