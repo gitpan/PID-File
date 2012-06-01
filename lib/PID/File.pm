@@ -16,11 +16,11 @@ PID::File - PID files with guarding against exceptions.
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -60,7 +60,7 @@ Or a bit more robust...
  
  # now do something, if we die at this point, the guard will call remove() automatically
  
- $pid_file->remove;
+ $pid_file->remove;   # we don't really need to do this explicitly when using the guard mechanism
 
 =head1 DESCRIPTION
 
@@ -89,7 +89,6 @@ sub new
 	
 	return $self;
 }
-
 
 =head2 Instance Methods
 
