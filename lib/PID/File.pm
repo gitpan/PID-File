@@ -17,11 +17,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.17
+Version 0.18
 
 =cut
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
