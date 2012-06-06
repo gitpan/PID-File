@@ -12,7 +12,7 @@ use Scalar::Util qw(weaken);
 use PID::File::Guard;
 
 use constant DEFAULT_SLEEP   => 1;
-use constant DEFAULT_RETRIES => 1;
+use constant DEFAULT_RETRIES => 0;
 
 =head1 NAME
 
@@ -20,11 +20,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.20
+Version 0.21
 
 =cut
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -151,11 +151,37 @@ Returns true or false for whether the pid file was created.
 
 If the file already exists, and the pid in that file is still running, no action will be taken and it will return false.
 
-You should really be using C<$pid_file->running> before using this call.
+If you supply the C<retries> parameter, it will retry that many times, sleeping for C<sleep> seconds (1 by default).
+
+ if ( ! $pid_file->create( retries => 5, sleep => 2 ) )
+ {
+     die "Could not create pid file";
+ }
 
 =cut
 
 sub create
+{
+	my ( $self, %args ) = @_;
+	
+	my $sleep   = $args{ sleep }   || DEFAULT_SLEEP;
+	my $retries = $args{ retries } || DEFAULT_RETRIES;
+		
+	my $attempts = 0;
+	
+	while (	! $self->_create )
+	{
+		$attempts ++;
+		
+		return 0 if $attempts > $retries;
+		
+		sleep $sleep;
+	}
+
+	return 1;
+}
+
+sub _create
 {
 	my $self = shift;
 
@@ -169,40 +195,6 @@ sub create
 
 	$self->_created( 1 );
 	
-	return 1;
-}
-
-=head3 create_or_wait
-
-Calls C<create()> in a loop C<retries> times, sleeping for C<sleep> seconds before returning 0.
-
- if ( ! $pid_file->create_or_wait( retries => 5, sleep => 2 ) )
- {
-     # do something
- }
-
-Returns 1 on success.
-
-=cut
-
-sub create_or_wait
-{
-	my ( $self, %args ) = @_;
-
-	my $sleep   = $args{ sleep }   || DEFAULT_SLEEP;
-	my $retries = $args{ retries } || DEFAULT_RETRIES;
-		
-	my $attempts = 0;
-	
-	while (	! $self->create )
-	{
-		$attempts ++;
-		
-		return 0 if $attempts > $retries;
-		
-		sleep $sleep;
-	}
-
 	return 1;
 }
 
