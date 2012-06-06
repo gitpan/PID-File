@@ -11,17 +11,20 @@ use Scalar::Util qw(weaken);
 
 use PID::File::Guard;
 
+use constant DEFAULT_SLEEP   => 1;
+use constant DEFAULT_RETRIES => 1;
+
 =head1 NAME
 
 PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.19
+Version 0.20
 
 =cut
 
-our $VERSION = '0.19';
+our $VERSION = '0.20';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -55,6 +58,19 @@ Or perhaps a bit more robust...
  
  $pid_file->remove;
 
+Using a helper method...
+
+ if ( $pid_file->create_or_wait( retries => 10, sleep => 5 ) )
+ {
+     # do something
+     
+     $pid_file->remove;
+ }
+ else
+ {
+     # could not get lock
+ }
+
 =head1 DESCRIPTION
 
 Creating a pid file, or lock file, should be such a simple process.
@@ -77,9 +93,9 @@ sub new
 {
 	my ( $class, %args ) = @_;
 	
-	my $self = { file     => $args{ file },
-	             _created => 0,
-	             guard    => sub { },
+	my $self = { file      => $args{ file },
+	             _created  => 0,
+	             guard     => sub { },
 	           };
 	
 	bless( $self, $class );
@@ -156,6 +172,40 @@ sub create
 	return 1;
 }
 
+=head3 create_or_wait
+
+Calls C<create()> in a loop C<retries> times, sleeping for C<sleep> seconds before returning 0.
+
+ if ( ! $pid_file->create_or_wait( retries => 5, sleep => 2 ) )
+ {
+     # do something
+ }
+
+Returns 1 on success.
+
+=cut
+
+sub create_or_wait
+{
+	my ( $self, %args ) = @_;
+
+	my $sleep   = $args{ sleep }   || DEFAULT_SLEEP;
+	my $retries = $args{ retries } || DEFAULT_RETRIES;
+		
+	my $attempts = 0;
+	
+	while (	! $self->create )
+	{
+		$attempts ++;
+		
+		return 0 if $attempts > $retries;
+		
+		sleep $sleep;
+	}
+
+	return 1;
+}
+
 sub _created
 {
 	my $self = shift;	
@@ -197,6 +247,10 @@ sub _read
 		my $pid = do { local $/; <$fh> };
 		$self->pid( $pid );
 		close $fh;
+	}
+	else
+	{
+		$self->_clear_pid;
 	}
 	
 	return $self;
