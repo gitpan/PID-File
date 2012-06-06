@@ -20,11 +20,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.22
+Version 0.23
 
 =cut
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -275,7 +275,7 @@ You can only remove a pid file that was created by the current instance of this 
 
 This is enforced by an internal object mechanism, and not the actual pid in the file.
  
-To force the removal of the pid file, supply C<force => 1> in the parameters...
+To force the removal of the pid file, supply C<force =&gt; 1> in the parameters...
 
  $pid_file->remove( force => 1 ); 
 
@@ -327,7 +327,7 @@ file again when the C<$pid_file> object finally goes out of scope naturally.
 
 You can only guard a pid file that was created by the current instance of this object.  This is enforced by an internal object mechanism, and not the actual pid in the file.
  
-To force the guarding of the pid file, supply C<force => 1> in the parameters
+To force the guarding of the pid file, supply C<force =&gt; 1> in the parameters
 
  $pid_file->guard( force => 1 ); 
 
