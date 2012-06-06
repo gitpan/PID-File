@@ -1,5 +1,7 @@
 Revision history for PID-File
 
+0.19    6 June 2012 - added pid() method to return pid in file (or undef)
+
 0.18    test exception is a dep
 
 0.17    tests to override the defensive checks

@@ -17,11 +17,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.18
+Version 0.19
 
 =cut
 
-our $VERSION = '0.18';
+our $VERSION = '0.19';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -149,6 +149,8 @@ sub create
 	print $fh $$                  or return 0;
 	close $fh                     or return 0;
 	
+	$self->pid( $$ );
+
 	$self->_created( 1 );
 	
 	return 1;
@@ -161,6 +163,45 @@ sub _created
 	return $self->{ _created };
 }
 
+=head3 pid
+
+ $pid_file->pid
+
+Returns the pid in the pid file, if it exists, undef otherwise.
+
+=cut
+
+sub pid
+{
+	my $self = shift;
+	
+	$self->{ pid } = $_[0] if @_;
+	
+	return $self->{ pid };
+}
+
+sub _clear_pid
+{
+	my $self = shift;
+	
+	$self->{ pid } = undef;
+}
+
+sub _read
+{
+	my $self = shift;
+
+	if ( -f $self->file )
+	{
+		open my $fh, "<", $self->file or die "Failed to read " . $self->file . ": $!";
+		my $pid = do { local $/; <$fh> };
+		$self->pid( $pid );
+		close $fh;
+	}
+	
+	return $self;
+}
+
 =head3 running
 
  if ( $pid_file->running )
@@ -171,18 +212,13 @@ Returns true or false to indicate whether the pid in the current pid file is run
 
 sub running
 {
-	my ( $self ) = @_;
+	my $self = shift;
 
-	if ( ! -f $self->file )
-	{
-		return 0;
-	}
+	$self->_read;
 
-	open my $fh, "<", $self->file or die "Failed to read " . $self->file . ": $!";
-	my $pid = do { local $/; <$fh> };
-	close $fh;
+	return 0 if ! $self->pid;
 
-	return kill 0, $pid;
+	return kill 0, $self->pid;
 }
 
 =head3 remove
@@ -208,6 +244,8 @@ sub remove
 	die "Cannot remove pid file that wasn't created by this process" if ! $self->_created && ! $args{ force };
 	
 	unlink $self->file;
+	
+	$self->_clear_pid;
 	
 	$self->_created( 0 );
 	
