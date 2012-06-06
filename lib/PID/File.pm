@@ -20,11 +20,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.21
+Version 0.22
 
 =cut
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -58,18 +58,16 @@ Or perhaps a bit more robust...
  
  $pid_file->remove;
 
-Using a helper method...
+Using the built-in retry mechanism...
 
- if ( $pid_file->create_or_wait( retries => 10, sleep => 5 ) )
+ if ( ! $pid_file->create( retries => 10, sleep => 5 ) )
  {
-     # do something
-     
-     $pid_file->remove;
+     die "Could not create pid file after 10 attempts";
  }
- else
- {
-     # could not get lock
- }
+
+ # do something
+ 
+ $pid_file->remove;
 
 =head1 DESCRIPTION
 
