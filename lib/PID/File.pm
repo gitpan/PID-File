@@ -21,11 +21,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.25
+Version 0.26
 
 =cut
 
-our $VERSION = '0.25';
+our $VERSION = '0.26';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -93,8 +93,7 @@ sub new
 	my ( $class, %args ) = @_;
 	
 	my $self = { file      => $args{ file },
-	             _created  => 0,
-	             guard     => sub { },
+	             guard     => sub { return },
 	           };
 	
 	bless( $self, $class );
@@ -199,7 +198,7 @@ sub _create
 	
 	print $fh $$ or return 0;
 	close $fh    or return 0;
-	
+
 	$self->pid( $$ );
 	
 	return 1;
@@ -209,7 +208,7 @@ sub _create
 
  $pid_file->pid
 
-Returns the pid in the pid file, if it exists, undef otherwise.
+Returns the pid in the pid file, if it exists.
 
 =cut
 
