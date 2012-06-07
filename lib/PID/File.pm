@@ -5,6 +5,7 @@ use 5.006;
 use strict;
 use warnings;
 
+use Fcntl qw(:DEFAULT :flock);
 use File::Basename qw(fileparse);
 use FindBin qw($Bin);
 use Scalar::Util qw(weaken);
@@ -20,11 +21,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.24
+Version 0.25
 
 =cut
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -185,22 +186,23 @@ sub _create
 
 	return 0 if $self->running;
 
-	open my $fh, '>', $self->file or return 0;
-	print $fh $$                  or return 0;
-	close $fh                     or return 0;
+	my $fh;
+	
+	sysopen( $fh, $self->file, O_WRONLY | O_CREAT | O_TRUNC ) or return 0;
+
+	if ( ! flock( $fh, LOCK_EX | LOCK_NB ) )
+	{
+		# unable to get lock, safer to assume it's running
+		close $fh;
+		return 0;
+	}
+	
+	print $fh $$ or return 0;
+	close $fh    or return 0;
 	
 	$self->pid( $$ );
-
-	$self->_created( 1 );
 	
 	return 1;
-}
-
-sub _created
-{
-	my $self = shift;	
-	$self->{ _created } = $_[0] if @_;
-	return $self->{ _created };
 }
 
 =head3 pid
@@ -220,32 +222,6 @@ sub pid
 	return $self->{ pid };
 }
 
-sub _clear_pid
-{
-	my $self = shift;
-	
-	$self->{ pid } = undef;
-}
-
-sub _read
-{
-	my $self = shift;
-
-	if ( -f $self->file )
-	{
-		open my $fh, "<", $self->file or die "Failed to read " . $self->file . ": $!";
-		my $pid = do { local $/; <$fh> };
-		$self->pid( $pid );
-		close $fh;
-	}
-	else
-	{
-		$self->_clear_pid;
-	}
-	
-	return $self;
-}
-
 =head3 running
 
  if ( $pid_file->running )
@@ -258,7 +234,24 @@ sub running
 {
 	my $self = shift;
 
-	$self->_read;
+	my $fh;
+	
+	if ( ! sysopen( $fh, $self->file, O_RDWR ) )
+	{
+		$self->{ pid } = undef;
+		return 0;
+	}
+
+	if ( ! flock( $fh, LOCK_EX | LOCK_NB ) )
+	{
+		# file is locked, safer to assume it's running
+		close $fh;
+		return 1;
+	}
+	
+	my $pid = do { local $/; <$fh> };
+	$self->pid( $pid ) if $pid =~ /^\d+$/;
+	close $fh;
 
 	return 0 if ! $self->pid;
 
@@ -285,15 +278,18 @@ sub remove
 {
 	my ( $self, %args ) = @_;
 	
-	die "Cannot remove pid file that wasn't created by this process" if ! $self->_created && ! $args{ force };
-	
+	if ( ! $args{ force } )
+	{
+		die "Unable to remove file for non-running process" if ! $self->running;
+		
+		die "Cannot remove pid file that wasn't created by this process" if $self->pid && $self->pid != $$;
+	}
+		
 	unlink $self->file;
 	
-	$self->_clear_pid;
+	$self->{ pid } = undef;
 	
-	$self->_created( 0 );
-	
-	$self->{ guard } = sub { };
+	$self->{ guard } = sub { return };
 
 	return $self;
 }
@@ -337,13 +333,20 @@ sub guard
 {
 	my ( $self, %args ) = shift;
 
-	die "Cannot guard pid file that wasn't created by this process" if ! $self->_created && ! $args{ force };
+	if ( ! $args{ force } )
+	{
+		die "No running process to guard against" if ! $self->running;
 
+		die "Unable to guard file not owned by this process" if $self->pid && $self->pid != $$;
+	}
+		
 	if ( ! defined wantarray )
 	{
 		weaken $self;   # prevent circular reference
 
 		$self->{ guard } = sub { $self->remove };
+		
+		return $self;
 	}
 	else
 	{	
