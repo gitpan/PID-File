@@ -1,5 +1,7 @@
 Revision history for PID-File
 
+0.30    remove flock dep
+
 0.29    add guard param to create()
 
 0.28    remove race conditions, auto guarding

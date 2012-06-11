@@ -5,7 +5,6 @@ use 5.006;
 use strict;
 use warnings;
 
-use Fcntl qw(:DEFAULT :flock);
 use File::Basename qw(fileparse);
 use FindBin qw($Bin);
 use Scalar::Util qw(weaken);
@@ -21,11 +20,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.29
+Version 0.30
 
 =cut
 
-our $VERSION = '0.29';
+our $VERSION = '0.30';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -40,8 +39,8 @@ Create PID files.
 
  if ( $pid_file->create )
  {
-	 $pid_file->guard;
-	 
+     $pid_file->guard;
+
      # do something
 
      $pid_file->remove;
@@ -178,24 +177,24 @@ sub create
 		if ( link( $temp, $self->file ) )
 		{
 			unlink $temp;
-			
+
 			$self->{ guard_temp } = sub { return };
-			
+
 			$self->pid( $$ );
 			$self->_created( 1 );
-			
+
 			$self->guard if $args{ guard };
-			
+
 			return 1;
 		}
-		
+
 		last if $attempts == $retries;
-		
+
 		$attempts ++;
 
 		sleep $sleep;
 	}
-	
+
 	unlink $temp;
 	$self->{ guard_temp } = sub { return };
 
@@ -250,7 +249,7 @@ sub running
 
 	return 0;
 }
-	
+
 =head3 remove
 
 Removes the pid file.
@@ -266,12 +265,12 @@ sub remove
 	my ( $self, %args ) = @_;
 
 	return $self if ! $self->_created;
-	
+
 	unlink $self->file;
 	$self->pid( undef );
 	$self->_created( 0 );
-	$self->{ guard } = sub { return };	
-	
+	$self->{ guard } = sub { return };
+
 	return $self;
 }
 
@@ -313,7 +312,7 @@ sub guard
 	my ( $self, %args ) = shift;
 
 	return if ! $self->_created;
-	
+
 	weaken $self;
 
 	if ( ! defined wantarray )
@@ -321,7 +320,7 @@ sub guard
 		$self->{ guard } = sub { $self->remove };
 		return $self;
 	}
-	else		
+	else
 	{
 		my $guard = PID::File::Guard->new( sub { $self->remove } );
 		$self->{ guard } = sub{ return };
@@ -334,7 +333,7 @@ sub DESTROY
 	my $self = shift;
 
 	$self->{ guard_temp }->();
-	
+
 	$self->{ guard }->();
 }
 
