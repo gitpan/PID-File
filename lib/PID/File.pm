@@ -20,11 +20,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.30
+Version 0.31
 
 =cut
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -313,11 +313,9 @@ sub guard
 
 	return if ! $self->_created;
 
-	weaken $self;
-
 	if ( ! defined wantarray )
 	{
-		$self->{ guard } = sub { $self->remove };
+		$self->{ guard } = sub { 1 };
 		return $self;
 	}
 	else
@@ -334,7 +332,7 @@ sub DESTROY
 
 	$self->{ guard_temp }->();
 
-	$self->{ guard }->();
+    $self->remove if $self->{ guard }->();
 }
 
 =head1 AUTHOR
