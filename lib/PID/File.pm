@@ -20,11 +20,11 @@ PID::File - PID files that guard against exceptions.
 
 =head1 VERSION
 
-Version 0.31
+Version 0.32
 
 =cut
 
-our $VERSION = '0.31';
+our $VERSION = '0.32';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
